@@ -34,74 +34,99 @@ The `bwrapper` function takes in a number of arguments and returns a package con
 
 - `pkg` (package, required)
 
-    The package providing the application you want to sandbox (e.g. `brave`).
+  The package providing the application you want to sandbox (e.g. `brave`).
+
 - `runScript` (string, required)
 
-    The name of the application (usually a file in the `bin` folder) to be run.
+  The name of the application (usually a file in the `bin` folder) to be run.
+
 - `forceAppId` (string, optional)
 
-    The app ID to use in the `/.flatpak-info` file. If left empty, this will be set to `nix.bwrapper.[package-name]`. This should not be set manually unless the app is misbehaving for some reason.
+  The app ID to use in the `/.flatpak-info` file. If left empty, this will be set to `nix.bwrapper.[package-name]`. Usually it is not necessary to override this, but some apps may force their own ID through other means (Lutris is one of those, for example).
+
+  In this case, you will need to set this to the actual app ID, which can be retrieved using your window manager. For example, in KDE, you may use the KWin Debug Console in order to retrieve the app ID of any window (there it's called `resourceClass`).
+
 - `dbusLogging` (boolean, optional)
 
-    Whether to enable logging from `xdg-dbus-proxy`, useful for debugging purposes. Default false.
+  Whether to enable logging from `xdg-dbus-proxy`, useful for debugging purposes. (default false)
+
 - `appendBwrapArgs` (array of string, optional)
 
-    Arguments to be appended to the `bwrap` call to your sandboxed application. See `man bwrap` for help.
+  Arguments to be appended to the `bwrap` call to your sandboxed application. See `man bwrap` for help.
+
 - `additionalFolderPaths` (array of path, optional)
 
-    Additional folder paths to be made available read only within the sandbox. Supports environment variables. Example: `additionalFolderPaths: [ "$HOME/Documents" ]` to make your `Documents` folder available read only.
+  Additional folder paths to be made available read only within the sandbox. Supports environment variables. Example: `additionalFolderPaths: [ "$HOME/Documents" ]` to make your `Documents` folder available read only.
+
 - `additionalFolderPathsReadWrite` (array of path, optional)
 
-    Same as `additionalFolderPaths`, except the sandbox also gets write permissions.
+  Same as `additionalFolderPaths`, except the sandbox also gets write permissions.
+
 - `additionalSandboxPaths` (array of object, optional)
 
-    An array containing elements of type `{ name = "string"; path = "string"; }`. For each element, a sandboxed path will be created at `$HOME/.bwrapper/${name}` and mounted to `${path}` inside the sandbox. This is already done for `~/.config`, `~/.local` and `~/.cache` by default. This is useful for ensuring data is kept persistently in the given paths.
+  An array containing elements of type `{ name = "string"; path = "string"; }`. For each element, a sandboxed path will be created at `$HOME/.bwrapper/${name}` and mounted to `${path}` inside the sandbox. This is already done for `~/.config`, `~/.local` and `~/.cache` by default (unless `sensibleDefaults` is set to `false`). This is useful for ensuring data is kept persistently in the given paths.
 
-    For example, for Firefox you'd want to add something like `additionalSandboxPaths: [ { name = "mozilla"; path = "$HOME/.mozilla"; }]` to ensure your browser settings are kept. Alternatively, you can also add `$HOME/.mozilla` to `additionalFolderPathsReadWrite`.
+  For example, for Firefox you'd want to add something like `additionalSandboxPaths: [ { name = "mozilla"; path = "$HOME/.mozilla"; }]` to ensure your browser settings are kept. Alternatively, you can also add `$HOME/.mozilla` to `additionalFolderPathsReadWrite`.
+
 - `dbusTalks` (array of string, optional)
 
-    A list of D-Bus services the sandboxed application is allowed to talk to. This is useful for applications that rely on D-Bus for things like notifications, or for applications that use D-Bus to communicate with other applications. For example, `org.freedesktop.secrets` is used by many applications to store passwords.
+  A list of D-Bus services the sandboxed application is allowed to talk to. This is useful for applications that rely on D-Bus for things like notifications, or for applications that use D-Bus to communicate with other applications. For example, `org.freedesktop.secrets` is used by many applications to store passwords.
+
 - `dbusOwns` (array of string, optional)
 
-    A list of D-Bus services the sandboxed application is allowed to own. This is useful for applications that provide D-Bus services themselves.
+  A list of D-Bus services the sandboxed application is allowed to own. This is useful for applications that provide D-Bus services themselves.
+
 - `systemDbusTalks` (array of string, optional)
 
-    Same as `dbusTalks`, but for system D-Bus services.
+  Same as `dbusTalks`, but for system D-Bus services.
+
 - `addPkgs` (array of package, optional)
 
-    A list of packages to be added to the sandbox, or more specifically, to be made available within the FHS environment. Although `/nix` is already mounted (which contains all applications as-is), some applications may not find them (especially if they've not been packaged for nix properly).
-    
-    By default, all libraries from the original package's `buildInputs` are already added, so normally you should be able to leave this field empty.
+  A list of packages to be added to the sandbox, or more specifically, to be made available within the FHS environment. Although `/nix` is already mounted (which contains all applications as-is), some applications may not find them (especially if they've not been packaged for nix properly).
+
+  By default, all libraries from the original package's `buildInputs` are already added, so normally you should be able to leave this field empty.
+
 - `overwriteExec` (boolean, optional)
-    
-    If set to true, all `.desktop` files will be overwritten to point to the sandbox script. This is useful for applications that have absolute paths in the `Exec` field of their `.desktop` files.
+  If set to `true`, all `.desktop` files will be overwritten to point to the sandbox script. This is useful for applications that have absolute paths in the `Exec` field of their `.desktop` files.
 - `execArgs` (string, optional)
 
-    Arguments to be appended to the `Exec` field of the `.desktop` file. Useful mostly if you've set `overwriteExec` to `true`.
+  Arguments to be appended to the `Exec` field of the `.desktop` file. Useful mostly if you've set `overwriteExec` to `true`.
+
 - `unshareIpc` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-ipc` set. (default true)
+  If set to `true`, the sandbox will be created with `--unshare-ipc` set. (default true)
+
 - `unshareUser` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-user` set. (default false)
+  If set to `true`, the sandbox will be created with `--unshare-user` set. (default false)
+
 - `unshareUts` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-uts` set. (default false)
+  If set to `true`, the sandbox will be created with `--unshare-uts` set. (default false)
+
 - `unshareCgroup` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-cgroup` set. (default false)
+  If set to `true`, the sandbox will be created with `--unshare-cgroup` set. (default false)
+
 - `unsharePid` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-pid` set. (default true)
+  If set to `true`, the sandbox will be created with `--unshare-pid` set. (default true)
+
 - `unshareNet` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--unshare-net` set. (default false)
+  If set to `true`, the sandbox will be created with `--unshare-net` set. (default false)
+
 - `dieWithParent` (boolean, optional)
 
-    If set to true, the sandbox will be created with `--die-with-parent` set. (default true)
+  If set to `true`, the sandbox will be created with `--die-with-parent` set. (default true)
+
 - `privateTmp` (boolean, optional)
 
-    If set to true, the sandbox will be created with a tmpfs mounted at `/tmp`. (default true)
+  If set to `true`, the sandbox will be created with a tmpfs mounted at `/tmp`. (default true)
+
+- `sensibleDefaults` (boolean, optional)
+
+  If set to `false`, will disable most of the preconfigured defaults. Note that this will most likely result in your application being unusable out of the box, so you will have to set up the required permissions yourself from scratch. (default true)
 
 Examples:
 
@@ -208,28 +233,28 @@ This file shows all the permissions that are being granted to the application. Y
 
 ```yaml
 finish-args:
-    - --device=all
-    - --env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons
-    - --share=ipc
-    - --share=network
-    - --socket=pulseaudio
-    - --socket=x11
+  - --device=all
+  - --env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons
+  - --share=ipc
+  - --share=network
+  - --socket=pulseaudio
+  - --socket=x11
 
-    # Filesystems
-    - --filesystem=xdg-download
+  # Filesystems
+  - --filesystem=xdg-download
 
-    # D-Bus Access
-    - --talk-name=com.canonical.AppMenu.Registrar
-    - --talk-name=org.freedesktop.Notifications
-    - --talk-name=org.freedesktop.ScreenSaver
-    - --talk-name=org.freedesktop.secrets
-    - --talk-name=org.kde.StatusNotifierWatcher
-    - --talk-name=org.kde.kwalletd5
-    - --talk-name=org.kde.kwalletd6
+  # D-Bus Access
+  - --talk-name=com.canonical.AppMenu.Registrar
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.ScreenSaver
+  - --talk-name=org.freedesktop.secrets
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.kde.kwalletd5
+  - --talk-name=org.kde.kwalletd6
 
-    # System D-Bus Access
-    - --system-talk-name=org.freedesktop.UPower
-    - --system-talk-name=org.freedesktop.login1
+  # System D-Bus Access
+  - --system-talk-name=org.freedesktop.UPower
+  - --system-talk-name=org.freedesktop.login1
 ```
 
 Now it's time to translate the above to nix. Let's first see what we can ignore:
@@ -256,7 +281,7 @@ That leaves the rest to be added. The final wrapper looks as follows:
 
         # to make global menu work in KDE
         addPkgs = [
-            pkgs.libdbusmenu 
+            pkgs.libdbusmenu
         ];
 
         # taken from the .yaml file above
@@ -281,7 +306,6 @@ That leaves the rest to be added. The final wrapper looks as follows:
 ```
 
 Note that even though e.g. `org.freedesktop.Notifications` is already granted by `bwrapper` by default, specifying it here again doesn't do any harm, since it filters for unique names anyway.
-
 
 #### Your application does not have a flatpak
 
